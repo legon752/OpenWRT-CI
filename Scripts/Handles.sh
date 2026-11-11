@@ -44,3 +44,8 @@ FIX "mini-diskmanager" "$PACKAGE_PATH/luci-app-mini-diskmanager" sed -i "s/servi
 #修改natmapt菜单位置
 FIX "natmapt" "$PACKAGE_PATH/luci-app-natmapt" sed -i "s/network/services/g" \
 	"$PACKAGE_PATH/luci-app-natmapt/root/usr/share/luci/menu.d/luci-app-natmap.json"
+
+#修复mihomo的upx路径：packages源的upx/host安装在hostpkg而不是host
+FIX "mihomo-upx" "$PACKAGE_PATH/helloworld/mihomo" sed -i \
+	's#$(STAGING_DIR_HOST)/bin/upx#$(STAGING_DIR_HOSTPKG)/bin/upx#g' \
+	"$PACKAGE_PATH/helloworld/mihomo/Makefile"
