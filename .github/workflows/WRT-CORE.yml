@@ -114,7 +114,12 @@ jobs:
           WRT_CACHE_SOURCE=${WRT_SOURCE//\//-}
           WRT_CACHE_BRANCH=${WRT_BRANCH//\//-}
           WRT_CACHE_TARGET="$WRT_TARGET-$WRT_SUBTARGET"
-          WRT_CACHE_PREFIX="wrt-$WRT_CACHE_SOURCE-$WRT_CACHE_BRANCH-$WRT_CACHE_TARGET"
+          #非x64主机的宿主工具不能与x64缓存混用，缓存名加上主机架构
+          WRT_CACHE_HOST=""
+          if [ "$RUNNER_ARCH" != "X64" ]; then
+            WRT_CACHE_HOST="${RUNNER_ARCH,,}-"
+          fi
+          WRT_CACHE_PREFIX="wrt-$WRT_CACHE_HOST$WRT_CACHE_SOURCE-$WRT_CACHE_BRANCH-$WRT_CACHE_TARGET"
           WRT_WIFI=$(grep -oE 'WIFI-(YES|NO)$' <<< "${WRT_CONFIG^^}" || true); WRT_WIFI=${WRT_WIFI:-none}
 
           {
