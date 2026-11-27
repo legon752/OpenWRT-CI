@@ -230,6 +230,9 @@ jobs:
         run: |
           cd ./wrt/
 
+          #记录编译开始时间，供缓存瘦身使用
+          echo "WRT_COMPILE_START=$(date +%s)" >> $GITHUB_ENV
+
           mkdir -p $GITHUB_WORKSPACE/build-reports
           make -j$(nproc) BUILD_TIME_LOG="$GITHUB_WORKSPACE/build-reports/parallel.tsv" || \
             make -j1 V=s BUILD_TIME_LOG="$GITHUB_WORKSPACE/build-reports/serial.tsv"
@@ -250,6 +253,21 @@ jobs:
           name: build-reports-${{env.WRT_CONFIG}}-${{env.WRT_INFO}}-${{github.run_attempt}}
           path: ./build-reports/
           retention-days: 7
+
+      - name: Trim Build Cache
+        if: ${{ !inputs.WRT_TEST && success() && steps.cache-restore.outputs.cache-hit != 'true' }}
+        continue-on-error: true
+        run: |
+          cd ./wrt/
+
+          #删除本次编译未用到的ccache旧文件，防止缓存越存越大
+          CCACHE_BIN=./staging_dir/host/bin/ccache
+          [ -x "$CCACHE_BIN" ] || CCACHE_BIN=$(command -v ccache)
+          if [ -d ./.ccache ] && [ -n "$CCACHE_BIN" ] && [ -n "$WRT_COMPILE_START" ]; then
+            echo "ccache before: $(du -sh ./.ccache | cut -f1)"
+            "$CCACHE_BIN" --dir ./.ccache --evict-older-than "$(( $(date +%s) - WRT_COMPILE_START + 600 ))s"
+            echo "ccache after: $(du -sh ./.ccache | cut -f1)"
+          fi
 
       - name: Save Build Cache
         if: ${{ !inputs.WRT_TEST && success() && steps.cache-restore.outputs.cache-hit != 'true' }}
